@@ -61,6 +61,8 @@
             font-family: "Whitney", "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: 17px;
             font-weight: @Themed("400", "500");
+            margin: 0;
+            overflow: hidden;
         }
 
         a {
@@ -163,29 +165,36 @@
         }
 
         .preamble {
-            display: grid;
-            margin: 0 0.3em 0.6em 0.3em;
-            max-width: 100%;
-            grid-template-columns: auto 1fr;
+            position: fixed;
+            padding: 0.6em 0.3em;
+            width: 100%;
+            left: 0;
+            top: 0;
+            box-sizing: border-box;
+            box-shadow: 0 0 2px black;
+            -webkit-box-shadow: 0 0 2px black;
+            /* Used for compatibility */
+            background-color: #36393e;
+            z-index: 1;
         }
 
         .preamble__guild-icon-container {
-            grid-column: 1;
+            float: left;
+            margin-right: 0.6em;
         }
 
         .preamble__guild-icon {
             max-width: 88px;
             max-height: 88px;
-        }
-
-        .preamble__entries-container {
-            grid-column: 2;
-            margin-left: 0.6em;
+            vertical-align: bottom;
         }
 
         .preamble__entry {
             font-size: 1.4em;
             color: @Themed("#ffffff", "#2f3136");
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
         }
 
         .preamble__entry--small {
@@ -194,6 +203,12 @@
 
         .chatlog {
             max-width: 100%;
+            overflow: auto;
+            position: relative;
+            height: calc(100vh - 88px - 1.2em);
+            top: calc(88px + 1.2em);
+            padding: 10px;
+            box-sizing: border-box;
         }
 
         .chatlog__message-group {
@@ -202,6 +217,7 @@
             padding: 0.9em 0;
             border-top: 1px solid @Themed("rgba(255, 255, 255, 0.1)", "#eceeef");
             grid-template-columns: auto 1fr;
+            overflow-anchor: none;
         }
 
         .chatlog__reference-symbol {
@@ -605,16 +621,80 @@
         .postamble__entry {
             color: @Themed("#ffffff", "#2f3136");
         }
+
+        @@-webkit-keyframes spinner-wandering-cubes {
+            25% {
+                -webkit-transform: translateX(22px) rotate(-90deg) scale(.5);
+                transform: translateX(22px) rotate(-90deg) scale(.5);
+            } 50% {
+                -webkit-transform: translateX(22px) translateY(22px) rotate(-180deg);
+                transform: translateX(22px) translateY(22px) rotate(-180deg);
+            } 75% {
+                -webkit-transform: translateX(0) translateY(22px) rotate(-270deg) scale(.5);
+                transform: translateX(0) translateY(22px) rotate(-270deg) scale(.5);
+            } to {
+                -webkit-transform: rotate(-1turn);
+                transform: rotate(-1turn);
+            }
+        }
+
+        @@keyframes spinner-wandering-cubes {
+            25% {
+                -webkit-transform: translateX(22px) rotate(-90deg) scale(.5);
+                transform: translateX(22px) rotate(-90deg) scale(.5);
+            } 50% {
+                -webkit-transform: translateX(22px) translateY(22px) rotate(-180deg);
+                transform: translateX(22px) translateY(22px) rotate(-180deg);
+            } 75% {
+                -webkit-transform: translateX(0) translateY(22px) rotate(-270deg) scale(.5);
+                transform: translateX(0) translateY(22px) rotate(-270deg) scale(.5);
+            } to {
+                -webkit-transform: rotate(-1turn);
+                transform: rotate(-1turn);
+            }
+        }
+
+        .spinner {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            justify-content: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            overflow-anchor: none;
+        }
+
+        .spinner .inner {
+            position: relative;
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            contain: paint;
+        }
+
+        .inner .cube {
+            background-color: hsl(235,86%,72%);
+            width: 10px;
+            height: 10px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            -webkit-animation: spinner-wandering-cubes 1.8s ease-in-out infinite;
+            animation: spinner-wandering-cubes 1.8s ease-in-out infinite;
+        }
+
+        .inner .cube:last-child {
+            -webkit-animation-delay: -.9s;
+            animation-delay: -.9s;
+        }
     </style>
 
     @{/* Syntax highlighting */}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/solarized-@(Model.ThemeName.ToLowerInvariant()).min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/highlight.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.pre--multiline').forEach(block => hljs.highlightBlock(block));
-        });
-    </script>
 
     @{/* Scripts */}
     <script>
@@ -694,5 +774,10 @@
     </div>
 </div>
 
-@{/* Preamble cuts off at this point */}
 <div class="chatlog">
+    <span class="spinner"><span class="inner"><span class="cube"></span><span class="cube"></span></span></span>
+    <div class="postamble"><div class="postamble__entry">Loading chat log...</div></div>
+</div>
+
+@{/* Preamble cuts off at this point */}
+<script type="text/template" id="chatlog">

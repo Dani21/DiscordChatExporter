@@ -2,11 +2,107 @@
 @inherits MiniRazor.TemplateBase<PostambleTemplateContext>
 
 @{/* Close elements opened by preamble */}
-</div>
+</script>
 
-<div class="postamble">
-    <div class="postamble__entry">Exported @Model.MessagesWritten.ToString("N0") message(s)</div>
-</div>
+<script type="text/javascript">
+function loadMore(source, after) {
+    // Source will be used for displaying chat history in other panels (ie. search)
+    // After will be used when going to a message after clicking the result in search (since we need to load down and up when that happens)
+    var dir = after ? 1 : -1;
+    var msgs = window.document2.querySelectorAll('.chatlog__message');
+    var ids = Array.prototype.map.call(msgs, function(e) { return e.id });
+    var el = (source || document).querySelectorAll('.chatlog__message');
+    var ind = el.length ? ids.indexOf(el[after ? el.length-1 : 0].id) : ids.length;
+    var end = ind+50*dir;
+    if (ind <= 0 || ind == ids.length-1) {
+        return;
+    } else if (end < 0) {
+        end = 0;
+    } else if (end >= ids.length) {
+        end = ids.length-1;
+    }
+    // Skip found element
+    ind += dir;
+    var chat = (source || document).querySelector('.chatlog');
+    while (ind*dir <= end*dir) {
+        var cur = msgs[ind];
+        // Count current element
+        ind += dir;
+        var top = document.importNode(cur.parentNode.parentNode, true);
+        var parent = top.querySelector('.chatlog__messages');
+        var el = parent.querySelector('#'+cur.id);
+
+        // Work at beginning of iteration:
+        while (el[after ? 'previousSibling' : 'nextSibling'] && el[after ? 'previousSibling' : 'nextSibling'].nodeName!='SPAN') {
+            // Remove messages within group in wrong direction from target chat (only first iteration)
+            parent.removeChild(el[after ? 'previousSibling' : 'nextSibling']);
+        }
+        if (after) {
+            // Correct timestamp for loading to EOT
+            el.previousSibling.innerText = el.title.substring(14);
+        }
+
+        // Main work, count elements to include in same group:
+        while (el[after ? 'nextSibling' : 'previousSibling'] && el[after ? 'nextSibling' : 'previousSibling'].nodeName!='SPAN') {
+            // Count from target chat within group up until end chat
+            if (ind*dir <= end*dir) {
+                el = el[after ? 'nextSibling' : 'previousSibling'];
+                if (el.nodeName == 'DIV') {
+                    ind += dir;
+                }
+            } else {
+                // Remove chat logs after end chat
+                parent.removeChild(el[after ? 'nextSibling' : 'previousSibling']);
+            }
+        }
+
+        // Work at end of iteration:
+        if (!after && el.title) {
+            // Correct timestamp for loading to BOT
+            el.previousSibling.innerText = el.title.substring(14);
+        }
+
+        // Add to DOM and move onto next group:
+        if (after) {
+            chat.appendChild(top);
+        } else {
+            chat.insertBefore(top, chat.childNodes[0]);
+        }
+        Array.prototype.forEach.call(top.querySelectorAll('.pre--multiline'), function(block) { return hljs.highlightBlock(block) });
+    }
+}
+
+var post = document.querySelector('.postamble__entry');
+post.innerHTML = 'Loading @Model.MessagesWritten.ToString("N0") message(s)...';
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initial load:
+    window.document2 = new DOMParser().parseFromString(document.getElementById('chatlog').innerText, 'text/html');
+    document.querySelector('.chatlog').removeChild(document.querySelector('.spinner'));
+    post.innerHTML = 'Loaded @Model.MessagesWritten.ToString("N0") message(s).';
+    loadMore();
+
+    // Scrolling functionality:
+    post.scrollIntoView();
+    document.querySelector('.chatlog__message-group').style.overflowAnchor = 'auto'
+
+    // Load additional messages on scrolling to top:
+    document.querySelector('.chatlog').addEventListener('scroll', function() {
+        var start = document.querySelector('.chatlog__message-group');
+        if (this.scrollTop <= start.offsetTop+start.offsetHeight && !window.scrolling) {
+            window.scrolling = true;
+            var h = this.scrollHeight;
+            var t = this.scrollTop;
+            loadMore();
+            if (this.scrollTop <= t) {
+                this.scrollTop = this.scrollHeight-h+this.scrollTop;
+            }
+            document.querySelector('.chatlog__message-group').style.overflowAnchor = 'auto';
+            window.scrolling = false;
+        }
+    });
+});
+</script>
 
 </body>
 
