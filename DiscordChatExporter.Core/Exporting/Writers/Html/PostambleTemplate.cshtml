@@ -15,6 +15,7 @@ function loadMore(source, after) {
     var ind = el.length ? ids.indexOf(el[after ? el.length-1 : 0].id) : ids.length;
     var end = ind+50*dir;
     if (ind <= 0 || ind == ids.length-1) {
+        (source || document).querySelector('.spinner').style.display = 'none';
         return;
     } else if (end < 0) {
         end = 0;
@@ -61,12 +62,16 @@ function loadMore(source, after) {
             // Correct timestamp for loading to BOT
             el.previousSibling.innerText = el.title.substring(14);
         }
+        if (ind*dir > end*dir) {
+            top.style.borderTop = '0 none';
+            top.style.marginTop = '0.6em';
+        }
 
         // Add to DOM and move onto next group:
         if (after) {
             chat.appendChild(top);
         } else {
-            chat.insertBefore(top, chat.childNodes[0]);
+            chat.insertBefore(top, chat.childNodes[2]);
         }
         Array.prototype.forEach.call(top.querySelectorAll('.pre--multiline'), function(block) { return hljs.highlightBlock(block) });
     }
@@ -78,7 +83,6 @@ post.innerHTML = 'Loading @Model.MessagesWritten.ToString("N0") message(s)...';
 document.addEventListener('DOMContentLoaded', function() {
     // Initial load:
     window.document2 = new DOMParser().parseFromString(document.getElementById('chatlog').innerText, 'text/html');
-    document.querySelector('.chatlog').removeChild(document.querySelector('.spinner'));
     post.innerHTML = 'Loaded @Model.MessagesWritten.ToString("N0") message(s).';
     loadMore();
 
